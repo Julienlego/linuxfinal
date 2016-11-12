@@ -24,11 +24,10 @@ void getGroupsForUser(char *name) {
 			printf("Cant find groups \n");
 	}
 
-	printf("%s: ", name);
 	for (j = 0; j < maxNumGroups; j++) {
 		gr = getgrgid(groups[j]);
 		if (gr != NULL)
-			printf(" (%s)", gr->gr_name);
+			printf("%s ", gr->gr_name);
 	}
 	printf("\n");
 }
