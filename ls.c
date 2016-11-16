@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     d = opendir(path);
 
     if (d == NULL) {
-      printf("error\n");
+      printf("opendir");
       return 0;
     }
 
