@@ -1,5 +1,4 @@
-/* Chris Bendel, Julien Gilbert
- */
+/* Chris Bendel, Julien Gilbert */
 #include <stdio.h>
 #include <stdlib.h>
 #include <grp.h>
