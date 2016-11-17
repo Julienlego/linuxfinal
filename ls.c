@@ -45,6 +45,47 @@ void longFormat (char *name, const char *path) {
 	printf(" %s", date);
 }
 
+void readDirectory(char *name) {
+  struct stat file;
+  int status = 0;
+
+  status = stat (name, &file);
+  if (S_ISREG(file.st_mode)) {
+    printf("%s\n", name);
+  }
+
+  if (S_ISDIR(file.st_mode)) {
+    DIR *d2;
+    struct dirent *dir2;
+    d2 = opendir(name);
+
+    while ((dir2 = readdir(d2)) != NULL) {
+      printf("%s\n", dir2->d_name);
+    }
+  }
+}
+
+void readDirectoryLA(char *name) {
+  struct stat file;
+  int status = 0;
+
+  status = stat (name, &file);
+  if (S_ISREG(file.st_mode)) {
+    printf("%s\n", name);
+  }
+
+  if (S_ISDIR(file.st_mode)) {
+    DIR *d2;
+    struct dirent *dir2;
+    d2 = opendir(name);
+
+    while ((dir2 = readdir(d2)) != NULL) {
+      longFormat(dir2->d_name, name);
+      printf(" %s\n", dir2->d_name);
+    }
+  }
+}
+
 
 /*------------------------------*/
 
@@ -53,14 +94,12 @@ int main(int argc, char* argv[])
     const char *path = ".";
     DIR *d;
     struct dirent *dir;
-    struct stat file;
     d = opendir(path);
     char buf[512];
     char *allFiles[512];
     char *hFiles[512];
     char *rFiles[512];
     int count = 0;
-    int status = 0;
     int rCount = 0, hCount = 0;
 
     if (d == NULL) {
@@ -117,32 +156,25 @@ int main(int argc, char* argv[])
         //checks for simple ls {filename}
         for (int i = 0; i < count; i++) {
           if ((strncmp(argv[1], allFiles[i], 20)) == 0) {
-            status = stat (argv[1], &file);
-            if (S_ISREG(file.st_mode)) {
-              printf("%s\n", argv[1]);
-            }
-
-            if (S_ISDIR(file.st_mode)) {
-              DIR *d2;
-              struct dirent *dir2;
-              d2 = opendir(argv[1]);
-
-              while ((dir2 = readdir(d2)) != NULL) {
-                printf("%s\n", dir2->d_name);
-              }
-            }
+            readDirectory(argv[1]);
           }
         }
         break;
       //Handles file argument
       case 3:
         for (int i = 0; i < count; i++) {
-          if (((strncmp(argv[1], allFiles[i], 30)) == 0) || ((strncmp(argv[2], allFiles[i], 30)) == 0)) {
-            status = stat(argv[1], &file);
-            if (S_ISREG (file.st_mode)) {
-              printf("%s\n", argv[1]);
+          //check if file exists
+          if (((strncmp(argv[2], allFiles[i], 30)) == 0)) {
+            //run -la or -al on directory
+            if ((strncmp(argv[1], "-la", 3) == 0 ) || ((strncmp(argv[1], "-al", 3)) == 0)) {
+              readDirectoryLA(argv[2]);
             }
-            if (S_ISDIR (file.st_mode)) {
+            //run -l on directory
+            if ((strncmp(argv[1], "-l", 2)) == 0) {
+
+            }
+            //run -a on directory
+            if ((strncmp(argv[1], "-a", 2)) == 0) {
 
             }
           }
