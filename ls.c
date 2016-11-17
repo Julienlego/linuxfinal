@@ -60,7 +60,52 @@ void readDirectory(char *name) {
     d2 = opendir(name);
 
     while ((dir2 = readdir(d2)) != NULL) {
+      if (dir2->d_name[0] != '.') {
+        printf("%s\n", dir2->d_name);
+      }
+    }
+  }
+}
+
+void readDirectoryA(char *name) {
+  struct stat file;
+  int status = 0;
+
+  status = stat (name, &file);
+  if (S_ISREG(file.st_mode)) {
+    printf("%s\n", name);
+  }
+
+  if (S_ISDIR(file.st_mode)) {
+    DIR *d2;
+    struct dirent *dir2;
+    d2 = opendir(name);
+
+    while ((dir2 = readdir(d2)) != NULL) {
       printf("%s\n", dir2->d_name);
+    }
+  }
+}
+
+void readDirectoryL(char *name) {
+  struct stat file;
+  int status = 0;
+
+  status = stat (name, &file);
+  if (S_ISREG(file.st_mode)) {
+    printf("%s\n", name);
+  }
+
+  if (S_ISDIR(file.st_mode)) {
+    DIR *d2;
+    struct dirent *dir2;
+    d2 = opendir(name);
+
+    while ((dir2 = readdir(d2)) != NULL) {
+      if (dir2->d_name[0] != '.') {
+        longFormat(dir2->d_name, name);
+        printf(" %s\n", dir2->d_name);
+      }
     }
   }
 }
@@ -171,11 +216,11 @@ int main(int argc, char* argv[])
             }
             //run -l on directory
             if ((strncmp(argv[1], "-l", 2)) == 0) {
-
+              readDirectoryL(argv[2]);
             }
             //run -a on directory
             if ((strncmp(argv[1], "-a", 2)) == 0) {
-
+              readDirectoryA(argv[2]);
             }
           }
         }
