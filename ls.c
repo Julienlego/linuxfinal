@@ -11,6 +11,7 @@
 
 void longFormat (char *name, const char *path) {
 	struct stat fileInfo;
+  int status;
 	char appendedPath[512];
 	sprintf(appendedPath, "%s/%s", path, name);
 	stat(appendedPath, &fileInfo);
@@ -41,7 +42,7 @@ void longFormat (char *name, const char *path) {
 	struct tm ts;
 	ts = *localtime(&fileInfo.st_mtime);
 	char date[80];
-	strftime(date, sizeof(date), "%b %d %H:%M", &ts);
+	strftime(date, sizeof(date), "%d %b %H:%M", &ts);
 	printf(" %s", date);
 }
 
@@ -72,6 +73,7 @@ void readDirectoryA(char *name) {
   int status = 0;
 
   status = stat (name, &file);
+
   if (S_ISREG(file.st_mode)) {
     printf("%s\n", name);
     return;
@@ -93,6 +95,7 @@ void readDirectoryL(char *name) {
   int status = 0;
 
   status = stat (name, &file);
+
   if (S_ISREG(file.st_mode)) {
     printf("%s\n", name);
     return;
@@ -117,6 +120,7 @@ void readDirectoryLA(char *name) {
   int status = 0;
 
   status = stat (name, &file);
+
   if (S_ISREG(file.st_mode)) {
     printf("%s\n", name);
     return;
@@ -204,8 +208,10 @@ int main(int argc, char* argv[])
         for (int i = 0; i < count; i++) {
           if ((strncmp(argv[1], allFiles[i], 20)) == 0) {
             readDirectory(argv[1]);
+            return 1;
           }
         }
+        printf("ls: %s: No such file or directory\n", argv[1]);
         break;
       //Handles file argument
       case 3:
@@ -229,6 +235,7 @@ int main(int argc, char* argv[])
             }
           }
         }
+        printf("ls: %s: No such file or directory\n", argv[2]);
         break;
     }
 }
