@@ -74,6 +74,7 @@ void readDirectoryA(char *name) {
   status = stat (name, &file);
   if (S_ISREG(file.st_mode)) {
     printf("%s\n", name);
+    return;
   }
 
   if (S_ISDIR(file.st_mode)) {
@@ -94,6 +95,7 @@ void readDirectoryL(char *name) {
   status = stat (name, &file);
   if (S_ISREG(file.st_mode)) {
     printf("%s\n", name);
+    return;
   }
 
   if (S_ISDIR(file.st_mode)) {
@@ -117,6 +119,7 @@ void readDirectoryLA(char *name) {
   status = stat (name, &file);
   if (S_ISREG(file.st_mode)) {
     printf("%s\n", name);
+    return;
   }
 
   if (S_ISDIR(file.st_mode)) {
@@ -130,7 +133,6 @@ void readDirectoryLA(char *name) {
     }
   }
 }
-
 
 /*------------------------------*/
 
@@ -213,14 +215,17 @@ int main(int argc, char* argv[])
             //run -la or -al on directory
             if ((strncmp(argv[1], "-la", 3) == 0 ) || ((strncmp(argv[1], "-al", 3)) == 0)) {
               readDirectoryLA(argv[2]);
+              return 1;
             }
             //run -l on directory
             if ((strncmp(argv[1], "-l", 2)) == 0) {
               readDirectoryL(argv[2]);
+              return 1;
             }
             //run -a on directory
             if ((strncmp(argv[1], "-a", 2)) == 0) {
               readDirectoryA(argv[2]);
+              return 1;
             }
           }
         }
