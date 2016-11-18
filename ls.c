@@ -1,3 +1,7 @@
+/* Chris Bendel, Julien Gilbert 
+ *
+ * We certify that this code is our own.
+ */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -9,6 +13,13 @@
 #include <stdlib.h>
 #include <dirent.h>
 
+// const flag for readDirectoy
+#define RD_DEFAULT 1
+#define RD_A 2
+#define RD_L 3
+#define RD_LA 4
+
+// prints list in long format
 void longFormat (char *name, const char *path) {
 	struct stat fileInfo;
   int status;
@@ -46,7 +57,8 @@ void longFormat (char *name, const char *path) {
 	printf(" %s", date);
 }
 
-void readDirectory(char *name) {
+/* reads directory with const flag for -l and -a */
+void readDirectory(char *name, const int flag) {
   struct stat file;
   int status = 0;
 
@@ -61,79 +73,24 @@ void readDirectory(char *name) {
     d2 = opendir(name);
 
     while ((dir2 = readdir(d2)) != NULL) {
-      if (dir2->d_name[0] != '.') {
+      if (flag == RD_A) {
         printf("%s\n", dir2->d_name);
       }
-    }
-  }
-}
-
-void readDirectoryA(char *name) {
-  struct stat file;
-  int status = 0;
-
-  status = stat (name, &file);
-
-  if (S_ISREG(file.st_mode)) {
-    printf("%s\n", name);
-    return;
-  }
-
-  if (S_ISDIR(file.st_mode)) {
-    DIR *d2;
-    struct dirent *dir2;
-    d2 = opendir(name);
-
-    while ((dir2 = readdir(d2)) != NULL) {
-      printf("%s\n", dir2->d_name);
-    }
-  }
-}
-
-void readDirectoryL(char *name) {
-  struct stat file;
-  int status = 0;
-
-  status = stat (name, &file);
-
-  if (S_ISREG(file.st_mode)) {
-    printf("%s\n", name);
-    return;
-  }
-
-  if (S_ISDIR(file.st_mode)) {
-    DIR *d2;
-    struct dirent *dir2;
-    d2 = opendir(name);
-
-    while ((dir2 = readdir(d2)) != NULL) {
-      if (dir2->d_name[0] != '.') {
+      else if (flag == RD_L) {
+        if (dir2->d_name[0] != '.') {
+          longFormat(dir2->d_name, name);
+          printf(" %s\n", dir2->d_name);
+        }
+      }
+      else if (flag == RD_LA) {
         longFormat(dir2->d_name, name);
         printf(" %s\n", dir2->d_name);
       }
-    }
-  }
-}
-
-void readDirectoryLA(char *name) {
-  struct stat file;
-  int status = 0;
-
-  status = stat (name, &file);
-
-  if (S_ISREG(file.st_mode)) {
-    printf("%s\n", name);
-    return;
-  }
-
-  if (S_ISDIR(file.st_mode)) {
-    DIR *d2;
-    struct dirent *dir2;
-    d2 = opendir(name);
-
-    while ((dir2 = readdir(d2)) != NULL) {
-      longFormat(dir2->d_name, name);
-      printf(" %s\n", dir2->d_name);
+      else {
+        if (dir2->d_name[0] != '.') {
+          printf("%s\n", dir2->d_name);
+        }
+      }
     }
   }
 }
@@ -207,7 +164,7 @@ int main(int argc, char* argv[])
         //checks for simple ls {filename}
         for (int i = 0; i < count; i++) {
           if ((strncmp(argv[1], allFiles[i], 20)) == 0) {
-            readDirectory(argv[1]);
+            readDirectory(argv[1], RD_DEFAULT);
             return 1;
           }
         }
@@ -220,17 +177,17 @@ int main(int argc, char* argv[])
           if (((strncmp(argv[2], allFiles[i], 30)) == 0)) {
             //run -la or -al on directory
             if ((strncmp(argv[1], "-la", 3) == 0 ) || ((strncmp(argv[1], "-al", 3)) == 0)) {
-              readDirectoryLA(argv[2]);
+              readDirectory(argv[2], RD_LA);
               return 1;
             }
             //run -l on directory
             if ((strncmp(argv[1], "-l", 2)) == 0) {
-              readDirectoryL(argv[2]);
+              readDirectory(argv[2], RD_L);
               return 1;
             }
             //run -a on directory
             if ((strncmp(argv[1], "-a", 2)) == 0) {
-              readDirectoryA(argv[2]);
+              readDirectory(argv[2], RD_A);
               return 1;
             }
           }
