@@ -7,7 +7,32 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-void SearchDirectory(const char *name) {
+void copyFile(char *f1, char *f2) {
+  FILE *source, *target;
+  char ch;
+
+  source=fopen(f1,"r");
+
+  if (source==NULL) {
+    printf("Unable to open. ERROR opening file!\n");
+    exit(1);
+  }
+
+  target=fopen(f2,"w");
+
+  if (target==NULL) {
+
+  }
+
+  while((ch=fgetc(source))!=EOF)
+    fputc(ch,target);
+
+  printf("Copy is Successful\n");
+  fclose(source);
+  fclose(target);
+}
+
+void SearchDirectory(const char *name, char *file) {
     DIR *dir = opendir(name);
     if(dir) {
         char Path[256], *EndPtr = Path;
@@ -19,34 +44,15 @@ void SearchDirectory(const char *name) {
             strcpy(EndPtr, e->d_name);       //Copies the current filename to the end of the path, overwriting it with each loop.
             if(!stat(Path, &info)) {         //stat returns zero on success.
                 if(S_ISDIR(info.st_mode)) {  //Are we dealing with a directory?
-                    //Make corresponding directory in the target folder here.
-                    SearchDirectory(Path);   //Calls this function AGAIN, this time with the sub-name.
-                } else if(S_ISREG(info.st_mode) { //Or did we find a regular file?
-                    copyFile()
+                    printf("In ISDIR\n");
+                    SearchDirectory(Path, file);   //Calls this function AGAIN, this time with the sub-name.
+                } else if(S_ISREG(info.st_mode)) { //Or did we find a regular file?
+                    printf("Copying from IS_REG\n");
+                    copyFile(file, Path);
                 }
             }
         }
     }
-}
-
-void copyFile(char *f1, char *f2) {
-  FILE *source, *target;
-  char ch;
-
-  source=fopen(f1,"r");
-  target=fopen(f2,"w");
-
-  if (source==NULL || target==NULL) {
-    printf("Unable to open. ERROR opening file!!n");
-    exit(1);
-  }
-
-  while((ch=fgetc(source))!=EOF)
-    fputc(ch,target);
-
-  printf("Copy is Successful\n");
-  fclose(source);
-  fclose(target);
 }
 
 int main(int argc, char *argv[])
@@ -63,13 +69,12 @@ int main(int argc, char *argv[])
   }
 
   if (argc == 3) {
-    if ()
     copyFile(argv[1], argv[2]);
   }
 
   if (argc == 4) {
     if (strcmp(argv[1], "-r") == 0) {
-      SearchDirectory(argv[2]);
+      SearchDirectory(argv[2], argv[3]);
     }
   }
 
