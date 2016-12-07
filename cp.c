@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <string.h>
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 void copyFile(char *f1, char *f2) {
   FILE *source, *target;
@@ -51,22 +53,43 @@ void SearchDirectory(char *file, const char *name) {
     }
 }
 
-void copyDir () {
-  DIR* dirp;
+void copyDir (char *directory) {
+  DIR* d;
   struct dirent* direntp;
+  char *dName;
 
-  dirp = opendir( "/Users/mac" );
-  if( dirp == NULL ) {
-      perror( "can't open /home/fred" );
-  } else {
-      for(;;) {
-          direntp = readdir( dirp );
-          if( direntp == NULL ) break;
+  d = opendir( directory );
+  if( d == NULL ) {
+      printf( "can't open %s\n", directory );
+      exit(1);
+  }
+  for(;;) {
+    direntp = readdir( d );
+    if (!direntp)
+      break;
+    dName = direntp->d_name;
+    printf("%s/%s\n", directory, dName);
+    if (direntp->d_type & DT_DIR) {
+      if (strcmp (dName, "..") != 0 &&
+          strcmp (dName, ".") != 0) {
+          int path_length;
+          char path[PATH_MAX];
 
-          printf( "%s\n", direntp->d_name );
+          path_length = snprintf (path, PATH_MAX,
+                                  "%s/%s", directory, dName);
+          printf ("%s\n", path);
+          if (path_length >= PATH_MAX) {
+              fprintf (stderr, "Path length has got too long.\n");
+              exit (EXIT_FAILURE);
+          }
+        copyDir(path);
       }
-
-      closedir( dirp );
+    }
+  }
+  if (closedir (d)) {
+      fprintf (stderr, "Could not close '%s': %s\n",
+               directory, strerror (errno));
+      exit (EXIT_FAILURE);
   }
 }
 
@@ -78,7 +101,7 @@ int main(int argc, char *argv[])
   struct dirent *pDirent;
   struct stat info;
 
-  copyDir();
+  copyDir(argv[1]);
 
   /*If arguments are less then 3 then give an error*/
   if(argc < 3 || argc > 4) {
