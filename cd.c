@@ -18,11 +18,11 @@ int main(int argc, char *argv[]) {
 		printf("changing directory to path...\n");
 		chdir(argv[1]);
 	}
-	
+
 	cwd = getcwd( buff, PATH_MAX + 1);
 	if( cwd != NULL ) {
         printf( "My working directory is %s.\n", cwd );
     }
-	
+
 	return 0;
 }
