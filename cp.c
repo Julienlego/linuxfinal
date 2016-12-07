@@ -20,10 +20,6 @@ void copyFile(char *f1, char *f2) {
 
   target=fopen(f2,"w");
 
-  if (target==NULL) {
-
-  }
-
   while((ch=fgetc(source))!=EOF)
     fputc(ch,target);
 
@@ -32,7 +28,7 @@ void copyFile(char *f1, char *f2) {
   fclose(target);
 }
 
-void SearchDirectory(const char *name, char *file) {
+void SearchDirectory(char *file, const char *name) {
     DIR *dir = opendir(name);
     if(dir) {
         char Path[256], *EndPtr = Path;
@@ -55,12 +51,34 @@ void SearchDirectory(const char *name, char *file) {
     }
 }
 
+void copyDir () {
+  DIR* dirp;
+  struct dirent* direntp;
+
+  dirp = opendir( "/Users/mac" );
+  if( dirp == NULL ) {
+      perror( "can't open /home/fred" );
+  } else {
+      for(;;) {
+          direntp = readdir( dirp );
+          if( direntp == NULL ) break;
+
+          printf( "%s\n", direntp->d_name );
+      }
+
+      closedir( dirp );
+  }
+}
+
 int main(int argc, char *argv[])
 {
   DIR *dir1, *dir2;
   struct stat statbuf;
+  struct stat st;
   struct dirent *pDirent;
   struct stat info;
+
+  copyDir();
 
   /*If arguments are less then 3 then give an error*/
   if(argc < 3 || argc > 4) {
