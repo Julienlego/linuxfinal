@@ -29,7 +29,6 @@ void copyFile(char *f1, char *f2) {
   stat(f2, &info);
   if(S_ISREG(info.st_mode)) {
     target=fopen(f2,"w");
-
     while((ch=fgetc(source))!=EOF)
       fputc(ch,target);
   }
@@ -46,7 +45,21 @@ void copyFile(char *f1, char *f2) {
   fclose(target);
 }
 
-// void SearchDirectory(char *file, const char *name) {
+// void copyFileRecursive(char *filename) {
+//   struct stat info;
+//   char ch;
+//   stat(filename, &info);
+//   if (S_ISREG(info.st_mode)) {
+//     FILE *f = fopen(filename, "r");
+//     while((ch=fgetc(source))!=EOF)
+//       fputc(ch,f);
+//   }
+//   if (S_ISDIR(info.st_mode)) {
+//     mkdir(filename, S_IRWXU);
+//   }
+// }
+
+// void SearchDirectory(char *file) {
 //     DIR *dir = opendir(name);
 //     if(dir) {
 //         char Path[256], *EndPtr = Path;
@@ -62,7 +75,7 @@ void copyFile(char *f1, char *f2) {
 //                     SearchDirectory(Path, file);   //Calls this function AGAIN, this time with the sub-name.
 //                 } else if(S_ISREG(info.st_mode)) { //Or did we find a regular file?
 //                     printf("Copying from IS_REG\n");
-//                     copyFile(file, Path);
+//                     copyFile(file);
 //                 }
 //             }
 //         }
@@ -77,7 +90,7 @@ void listDir (char *directory) {
 
   d = opendir( directory );
   if( d == NULL ) {
-      printf( "can't open %s\n", directory );
+      printf( "Can't open %s\n", directory );
       exit(1);
   }
   for(;;) {
@@ -92,9 +105,8 @@ void listDir (char *directory) {
           strcmp (dName, ".") != 0) {
           int path_length;
           char path[PATH_MAX];
-          // if (S_ISREG(info.st_mode)) {
-            // printf("file name: %s", dName);
-          // }
+          copyFile(dName, dName);
+          //copy dir here?
           path_length = snprintf (path, PATH_MAX,
                                   "%s/%s", directory, dName);
           printf ("%s\n", path);
@@ -105,7 +117,8 @@ void listDir (char *directory) {
         listDir(path);
       }
     } else {
-      // copyFile()
+      //copy file here?
+      copyFile(dName, dName);
       printf("file name: %s\n", dName);
     }
   }
@@ -136,10 +149,12 @@ int main(int argc, char *argv[])
     copyFile(argv[1], argv[2]);
   }
 
-  // if (argc == 4) {
-  //   if (strcmp(argv[1], "-r") == 0) {
-  //     SearchDirectory(argv[2], argv[3]);
-  //   }
-  // }
+  if (argc == 4) {
+    if (strcmp(argv[1], "-r") == 0) {
+      chdir(argv[3]);
+      listDir(argv[2]);
+      // SearchDirectory(argv[2], argv[3]);
+    }
+  }
 
 }
