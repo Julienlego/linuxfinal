@@ -1,160 +1,213 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <string.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <limits.h>
+#include <stdlib.h>
 
-//Fully working. Copies a file to another/creates a new file
-//Additionally copies a file to a directory path
-void copyFile(char *f1, char *f2) {
-  FILE *source, *target;
-  DIR *dir;
-  char ch;
-  char buff[PATH_MAX + 1];
-  struct stat info;
-  char *cwd = getcwd( buff, PATH_MAX + 1);
+int copyFile(const char* src, const char* dest);
+int copyRecursive(const char* src, const char* dest);
 
-  source=fopen(f1,"r");
-
-  if (source==NULL) {
-    printf("Unable to open. ERROR opening file!\n");
-    exit(1);
-  }
-
-  stat(f2, &info);
-  if(S_ISREG(info.st_mode)) {
-    target=fopen(f2,"w");
-    while((ch=fgetc(source))!=EOF)
-      fputc(ch,target);
-  }
-
-  if (S_ISDIR(info.st_mode)) {
-    chdir(f2);
-    target=fopen(f1,"w");
-    while((ch=fgetc(source))!=EOF)
-      fputc(ch,target);
-  }
-
-  printf("Copy successful\n");
-  fclose(source);
-  fclose(target);
-}
-
-// void copyFileRecursive(char *filename) {
-//   struct stat info;
-//   char ch;
-//   stat(filename, &info);
-//   if (S_ISREG(info.st_mode)) {
-//     FILE *f = fopen(filename, "r");
-//     while((ch=fgetc(source))!=EOF)
-//       fputc(ch,f);
-//   }
-//   if (S_ISDIR(info.st_mode)) {
-//     mkdir(filename, S_IRWXU);
-//   }
-// }
-
-// void SearchDirectory(char *file) {
-//     DIR *dir = opendir(name);
-//     if(dir) {
-//         char Path[256], *EndPtr = Path;
-//         struct dirent *e;
-//         strcpy(Path, name);                  //Copies the current path to the 'Path' variable.
-//         EndPtr += strlen(name);              //Moves the EndPtr to the ending position.
-//         while((e = readdir(dir)) != NULL) {  //Iterates through the entire directory.
-//             struct stat info;                //Helps us know about stuff
-//             strcpy(EndPtr, e->d_name);       //Copies the current filename to the end of the path, overwriting it with each loop.
-//             if(!stat(Path, &info)) {         //stat returns zero on success.
-//                 if(S_ISDIR(info.st_mode)) {  //Are we dealing with a directory?
-//                     printf("In ISDIR\n");
-//                     SearchDirectory(Path, file);   //Calls this function AGAIN, this time with the sub-name.
-//                 } else if(S_ISREG(info.st_mode)) { //Or did we find a regular file?
-//                     printf("Copying from IS_REG\n");
-//                     copyFile(file);
-//                 }
-//             }
-//         }
-//     }
-// }
-
-void listDir (char *directory) {
-  DIR* d;
-  struct dirent* direntp;
-  char *dName;
-  struct stat info;
-
-  d = opendir( directory );
-  if( d == NULL ) {
-      printf( "Can't open %s\n", directory );
-      exit(1);
-  }
-  for(;;) {
-    direntp = readdir( d );
-    if (!direntp)
-      break;
-    dName = direntp->d_name;
-    // printf("dName = %s\n", dName);
-    printf("%s/%s\n", directory, dName);
-    if (direntp->d_type & DT_DIR) {
-      if (strcmp (dName, "..") != 0 &&
-          strcmp (dName, ".") != 0) {
-          int path_length;
-          char path[PATH_MAX];
-          copyFile(dName, dName);
-          //copy dir here?
-          path_length = snprintf (path, PATH_MAX,
-                                  "%s/%s", directory, dName);
-          printf ("%s\n", path);
-          if (path_length >= PATH_MAX) {
-              fprintf (stderr, "Path length has got too long.\n");
-              exit (EXIT_FAILURE);
-          }
-        listDir(path);
+int main (int argc, char* argv[]) {
+  int isRecursive = 0;
+  char *rFlag = "-r";
+  char src[256];
+  char dest[256];
+  if (argc > 2) {
+    //looks for -r option
+    if (strcmp(argv[1], rFlag) == 0) {
+      isRecursive = 1;
+    }
+    if (argc < 5) {
+      sprintf(src, "%s", argv[2]);
+      sprintf(dest, "%s", argv[3]);
+      int status = 0;
+      if (isRecursive && argc == 4) {
+        status = copyRecursive(src, dest);
+        if (status == 1) {
+        }
+      } else if (argc == 3) {
+        status = copyFile(src, dest);
+        if (status == 1) {
+        }
+      } else {
+        printf("Incorrect amount of args\n");
       }
     } else {
-      //copy file here?
-      copyFile(dName, dName);
-      printf("file name: %s\n", dName);
+      printf("Too many args\n");
     }
   }
-
-  if (closedir (d)) {
-      fprintf (stderr, "Could not close '%s': %s\n",
-               directory, strerror (errno));
-      exit (EXIT_FAILURE);
+  else {
+    printf("Too little args\n");
   }
-}
-
-int main(int argc, char *argv[])
-{
-  DIR *dir1, *dir2;
-  struct stat statbuf;
-  struct stat st;
-  struct dirent *pDirent;
-  struct stat info;
-  // listDir(argv[1]);
-
-  /*If arguments are less then 3 then give an error*/
-  if(argc < 3 || argc > 4) {
-    printf("Error! Incorrect amount of arguments given\n");
     return 0;
   }
 
-  if (argc == 3) {
-    copyFile(argv[1], argv[2]);
+int copyFile(const char* src, const char* dest) {
+  int fSource, fDest, sizer, sizew;
+  char buffer[2048];
+  struct stat info;
+
+  stat(src, &info);
+  // check if dir
+  if (S_ISDIR(info.st_mode)) {
+    printf("%s is a directory\n", src);
+    return 1;
   }
 
-  if (argc == 4) {
-    if (strcmp(argv[1], "-r") == 0) {
-      chdir(argv[3]);
-      listDir(argv[2]);
-      // SearchDirectory(argv[2], argv[3]);
+  char destination[256];
+
+  //reset destination string
+  for (int i = 0; i < 256; i++) {
+    destination[i] = 0;
+  }
+
+  strcat(destination, dest);
+
+  stat(dest, &info);
+  if (S_ISDIR(info.st_mode)) {
+    char file[256];
+    int i = strlen(src) - 1;
+
+    while(src[i] != '/' && i > -1) {
+      i--;
+    }
+    i++;
+    int j = 0;
+
+    while(i < strlen(src)) {
+      file[j] = src[i];
+      i++;
+      j++;
+    }
+    file[j] = 0;
+
+    //check for directory ending in a /
+    if (destination[strlen(destination) - 1] == '/') {
+      sprintf(destination, "%s%s", destination, file);
+    } else {
+      sprintf(destination, "%s/%s", destination, file);
     }
   }
 
+  //now we make it a const :(
+  const char* postdestination = destination;
+
+  //open the files
+  fSource = open(src, O_RDONLY);
+  if (fSource < 0) {
+    // printf("Error! Cannot open %s\n", src);
+    perror("Error");
+    return 1;
+  }
+  fDest = open(postdestination, O_WRONLY | O_CREAT, 0777);
+  if (fDest < 0) {
+    printf("Error! cannot open %s\n", postdestination);
+    perror("Error");
+    return 1;
+  }
+
+  //copy the stuff over
+  sizer = read(fSource, buffer, sizeof(buffer));
+  sizew = write(fDest, buffer, sizer);
+
+  return 0;
+}
+
+int copyRecursive(const char* src, const char* dest) {
+
+  //check if file or dir
+  struct stat info;
+  stat(src, &info);
+  if (!S_ISDIR(info.st_mode)) {
+    return copyFile(src, dest);
+  }
+
+  char destination[256];
+  for (int i = 0; i < 256; i++) {
+    destination[i] = 0;
+  }
+
+  sprintf(destination, "%s%s", destination, dest);
+  int len = strlen(destination);
+  if (destination[len - 1] != '/') {
+    destination[len] = '/';
+    destination[len+1] = 0;
+  }
+
+  //logic to check if dir exists
+  //if not, makes a dir in specified location
+  if (stat(dest, &info) == -1) {
+    //create folder if it doesn't exist
+    mkdir(dest, 0777);
+  } else if (!S_ISDIR(info.st_mode)) {
+    printf("cannot copy directory into file\n");
+    return 1;
+  } else {
+    //Traverse to destination and create folder there
+    char name[256];
+    for (int i = 0; i < 256; i++) {
+      name[i] = 0;
+    }
+    int i = strlen(src) - 1;
+
+    if (src[i] == '/') {
+      i--;
+    }
+    while(src[i] != '/' && i > -1) {
+      i--;
+    }
+    i++;
+    int j = 0;
+    while(i < strlen(src)) {
+      name[j] = src[i];
+      i++;
+      j++;
+    }
+    if (name[j - 1] != '/') {
+      name[j] = '/';
+      name[j+1] = 0;
+    }
+
+    //create nested dir
+    strcat(destination, name);
+    mkdir(destination, 0777);
+  }
+
+  struct dirent *dp;
+
+  DIR* dirp = opendir(src);
+  if (dirp == NULL) {
+    printf("cp: cannot access '%s': No such file or directory\n", src);
+    exit(1);
+  }
+
+  // check each file/dir in the directory
+  while ((dp = readdir(dirp)) != NULL) {
+    if (dp->d_name[0] != '.') {
+      struct stat fileInfo;
+
+      char path[256];
+      for (int i = 0; i < 256; i++) {
+        path[i] = 0;
+      }
+
+      //appends / to the filepath if not there already
+      if (src[strlen(src) - 1] == '/') {
+        sprintf(path, "%s%s", src, dp->d_name);
+      } else {
+        sprintf(path, "%s/%s", src, dp->d_name);
+      }
+
+      stat(path, &fileInfo);
+      if (S_ISDIR(fileInfo.st_mode)) {
+        copyRecursive(path, destination);
+      } else {
+        copyFile(path, destination);
+      }
+    }
+  }
+  return 0;
 }
