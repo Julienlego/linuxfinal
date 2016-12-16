@@ -6,39 +6,38 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-    char *scan[128];    // input pre-parse
+    char *line = NULL;    // input pre-parse
     char **input;       // input parsed
+    pid_t pid;
     
-    /* asks user for  */
+    /* asks user for input till they exit*/
     while (input[0] != "exit" || input[0] != "EXIT") {
-        
-        printf("bettershell ---> ");
-        scanf("%s",scan);
+        line = readInput();
         input = parseInput(scan);
         
         if( input[0] == "groups") {
-            
+            execpv("./groups", input);
         }
         else if(input[0] == "ls") {
-            
+            execpv("./ls", input);
         }
         else if(input[0] == "cp") {
-            
+            execpv("./cp", input);
         }
         else if(input[0] == "cd") {
-            
+            execpv("./cd", input);
         }
         else {
-            
+            system(scan);
         }
+        pid = fork();
     }
     
-	free(scan);
-	for(int i=0;i<128;i++){
-	    free(input[i]);
-	}
+    /* free allocated memory */
+	free(line);
 	free(input);
-	return 0;
+	
+	return EXIT_SUCCESS;
 }
 
 /* parses the user input */
@@ -46,7 +45,7 @@ char **parseInput(char *input)
 {
     /* Initialize Variables */
     int pos = 0;
-    char **letters = malloc(128);
+    char **letters = malloc(64 * sizeof(char));
     char *letter;
  
     /* Traverse Input */
@@ -64,4 +63,14 @@ char **parseInput(char *input)
  
     /* Return array of char arrays */
     return letters;
+}
+
+/* reads and returns line from user */
+char *readInput()
+{
+    char *line = NULL;
+    size_t bufsize = 0; // allocates a buffer
+    printf("bettershell ---> ");
+    getline(&line, &bufsize, stdin);
+    return line;
 }
